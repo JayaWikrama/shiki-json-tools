@@ -33,7 +33,7 @@ typedef enum {
 
 int8_t json_debug_mode_status = 0x00;
 
-static void sjson_debug(const char *_function_name, sjson_debug_type _debug_type, char *_debug_msg, ...){
+static void sjson_debug(const char *_function_name, sjson_debug_type _debug_type, const char *_debug_msg, ...){
   if (json_debug_mode_status || _debug_type != SJSON_DEBUG_INFO){
     struct tm *d_tm = NULL;
     struct timeval tm_debug;
@@ -194,7 +194,7 @@ void sjson_remove_whitespace_from_json_string(char *_buff, size_t _buff_length){
   _buff[idx_new_buff] = 0x00;
 }
 
-int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_of_source){
+int16_t sjson_get_list(sjsonList *_sjson_list, char *_buff_source, uint16_t size_of_source){
   uint8_t cnt_data = 0x00;
   uint8_t cnt_switch = 0x00;
   uint16_t cnt_tmp = 0;
@@ -217,24 +217,24 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   memset(sjson_parrent_list, SJSON_PARRENT_NULL, sizeof(sjson_parrent_type));
   uint8_t sjson_parrent_position = 0;
 
-  while (buff_source[start_bytes] != '{' && buff_source[start_bytes] != '[' && buff_source[start_bytes] != 0x00){
+  while (_buff_source[start_bytes] != '{' && _buff_source[start_bytes] != '[' && _buff_source[start_bytes] != 0x00){
     start_bytes++;
   }
 
-  if (buff_source[start_bytes] == '['){
+  if (_buff_source[start_bytes] == '['){
     sjson_parrent_list[0] = SJSON_PARRENT_ARRAY;
   }
   else {
     sjson_parrent_list[0] = SJSON_PARRENT_OBJECT;
   }
 
-  if (buff_source[start_bytes] == 0x00){
+  if (_buff_source[start_bytes] == 0x00){
     sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid json format\n");
     return -1;
   }
 
-  sjson_remove_whitespace_from_json_string(buff_source + start_bytes, (size_of_source - start_bytes));
-  size_of_source = strlen(buff_source);
+  sjson_remove_whitespace_from_json_string(_buff_source + start_bytes, (size_of_source - start_bytes));
+  size_of_source = strlen(_buff_source);
 
   char *buff_key_tmp = NULL;
   buff_key_tmp = (char *) malloc(sjson_key_size * sizeof(char));
@@ -255,25 +255,25 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   start_bytes++;
 
   for (i=start_bytes; i<size_of_source; i++){
-    if (buff_source[i] == ']'){
+    if (_buff_source[i] == ']'){
       if (sjson_parrent_list[sjson_parrent_position] != SJSON_PARRENT_ARRAY){
         sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (1)");
         goto sjson_get_list_err;
       }
       sjson_parrent_list[sjson_parrent_position] = SJSON_PARRENT_NULL;
       sjson_parrent_position--;
-      if (buff_source[i + 1] == '{' ||
-       buff_source[i + 1] == '['
+      if (_buff_source[i + 1] == '{' ||
+       _buff_source[i + 1] == '['
       ){
         sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for \",\" invalid possition (1)");
         goto sjson_get_list_err;
       }
     }
-    else if (buff_source[i] == '['){
+    else if (_buff_source[i] == '['){
       if (i >= 2){
-        if (!((buff_source[i - 1] == ',' && buff_source[i - 2] == ']') ||
-         buff_source[i - 1] == ':' ||
-         buff_source[i - 1] == '[')
+        if (!((_buff_source[i - 1] == ',' && _buff_source[i - 2] == ']') ||
+         _buff_source[i - 1] == ':' ||
+         _buff_source[i - 1] == '[')
         ){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (1.1)");
           goto sjson_get_list_err;
@@ -282,30 +282,30 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
       sjson_parrent_position++;
       sjson_parrent_list[sjson_parrent_position] = SJSON_PARRENT_ARRAY;
     }
-    if ((buff_source[i]!='{' && buff_source[i]!='}' && (buff_source[i]!='\"' || array_anomaly)) || i == (size_of_source-1)){
+    if ((_buff_source[i]!='{' && _buff_source[i]!='}' && (_buff_source[i]!='\"' || array_anomaly)) || i == (size_of_source-1)){
       if (!cnt_switch){
-        if ((buff_source[i] == ':' && (buff_source[i+1] == '{' || buff_source[i+1] == '[')) ||
-         (buff_source[i] == ']')
+        if ((_buff_source[i] == ':' && (_buff_source[i+1] == '{' || _buff_source[i+1] == '[')) ||
+         (_buff_source[i] == ']')
         ){
           if (cnt_tmp){
             buff_key_tmp[cnt_tmp] = 0x00;
             buff_value_tmp[0] = 0x00;
-            if (buff_source[i+1] == '{'){
+            if (_buff_source[i+1] == '{'){
               sprintf(buff_value_tmp, "obj_%i", obj_counter);
               obj_counter++;
             }
-            else if (buff_source[i+1] == '['){
+            else if (_buff_source[i+1] == '['){
               sprintf(buff_value_tmp, "arr_%i", arr_counter);
               arr_counter++;
             }
             shilink_fill_custom_data(
              &sjson_data,
-             (void *) buff_key_tmp, 
+             (const void *) buff_key_tmp, 
              (uint16_t) strlen(buff_key_tmp),
-             (void *) buff_value_tmp,
+             (const void *) buff_value_tmp,
              (uint16_t) strlen(buff_value_tmp),
              SL_POINTER);
-            shilink_append(sjson_list, sjson_data);
+            shilink_append(_sjson_list, sjson_data);
 
             if (sjson_key_size != 8){
               sjson_key_size = 8;
@@ -322,48 +322,48 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           cnt_tmp = 0;
           buff_check = NULL;
         }
-        else if(buff_source[i] == ':'){
+        else if(_buff_source[i] == ':'){
           buff_key_tmp[cnt_tmp] = 0x00;
           cnt_switch = 0x01;
           cnt_tmp = 0;
         }
-        else if (buff_source[i] != '[' && buff_source[i] != ',' && store_state == 1) {
+        else if (_buff_source[i] != '[' && _buff_source[i] != ',' && store_state == 1) {
           if ((sjson_key_size - 2) == cnt_tmp){
             sjson_key_size += 8;
             buff_key_tmp = (char *) realloc(buff_key_tmp, sjson_key_size * sizeof(char));
           }
-          buff_key_tmp[cnt_tmp] = buff_source[i];
+          buff_key_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
         else if (!store_state &&
          sjson_parrent_list[sjson_parrent_position] == SJSON_PARRENT_OBJECT &&
-         buff_source[i - 1] != ']'
+         _buff_source[i - 1] != ']'
         ){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (0) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
       }
       else {
-        if((buff_source[i] == ',' && array_anomaly == 0) ||
-         (buff_source[i] == ']' && array_anomaly == 0) ||
-         (buff_source[i] == '[' && store_state == 0) ||
+        if((_buff_source[i] == ',' && array_anomaly == 0) ||
+         (_buff_source[i] == ']' && array_anomaly == 0) ||
+         (_buff_source[i] == '[' && store_state == 0) ||
          i == (size_of_source-1)
         ){
           buff_value_tmp[cnt_tmp] = 0x00;
           json_types = SL_TEXT;
-          if (buff_source[i] == '{'){
+          if (_buff_source[i] == '{'){
             sprintf(buff_value_tmp, "obj_%i", obj_counter);
             obj_counter++;
             json_types = SL_POINTER;
           }
-          else if (buff_source[i] == '['){
+          else if (_buff_source[i] == '['){
             sprintf(buff_value_tmp, "arr_%i", arr_counter);
             arr_counter++;
             json_types = SL_POINTER;
           }
           if (json_types != SL_POINTER){
             if (buff_check == NULL){
-              buff_check = buff_source + i - strlen(buff_value_tmp);
+              buff_check = _buff_source + i - strlen(buff_value_tmp);
             }
             if ((buff_check - 1)[0] == '\"'){
               if (buff_check[strlen(buff_value_tmp)] == '\"'){
@@ -385,7 +385,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           if (json_types == SL_POINTER && !strcmp(buff_value_tmp, "null")){
             shilink_fill_custom_data(
              &sjson_data,
-             (void *) buff_key_tmp, 
+             (const void *) buff_key_tmp, 
              (uint16_t) strlen(buff_key_tmp),
              NULL,
              (uint16_t) 0,
@@ -394,13 +394,13 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           else {
             shilink_fill_custom_data(
              &sjson_data,
-             (void *) buff_key_tmp, 
+             (const void *) buff_key_tmp, 
              (uint16_t) strlen(buff_key_tmp),
-             (void *) buff_value_tmp,
+             (const void *) buff_value_tmp,
              (uint16_t) strlen(buff_value_tmp),
              json_types);
           }
-          shilink_append(sjson_list, sjson_data);
+          shilink_append(_sjson_list, sjson_data);
 
           if (sjson_key_size != 8){
             sjson_key_size = 8;
@@ -419,10 +419,10 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           buff_check = NULL;
         }
         else if (store_state){
-          if (buff_source[i] == '['){
+          if (_buff_source[i] == '['){
             array_anomaly = 0x01;
           }
-          else if(buff_source[i] == ']'){
+          else if(_buff_source[i] == ']'){
             array_anomaly = 0x00;
           }
           if ((sjson_value_size - 2) == cnt_tmp){
@@ -430,22 +430,22 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
             buff_value_tmp = (char *) realloc(buff_value_tmp, sjson_value_size * sizeof(char));
           }
           if (!(store_numeric &&
-           (buff_source[i] == 0x20 ||
-            buff_source[i] == 0x2d ||
-            buff_source[i] == 0x0a
+           (_buff_source[i] == 0x20 ||
+            _buff_source[i] == 0x2d ||
+            _buff_source[i] == 0x0a
            ))
           ){
-            buff_value_tmp[cnt_tmp] = buff_source[i];
+            buff_value_tmp[cnt_tmp] = _buff_source[i];
             cnt_tmp++;
           }
         }
         else if (!store_state &&
          (
-          (buff_source[i] >= 'a' && buff_source[i] <= 'z') ||
-          (buff_source[i] >= 'A' && buff_source[i] <= 'Z') ||
-          (buff_source[i] >= '0' && buff_source[i] <= '9') ||
-          (buff_source[i] == '-') ||
-          (buff_source[i] == '+')
+          (_buff_source[i] >= 'a' && _buff_source[i] <= 'z') ||
+          (_buff_source[i] >= 'A' && _buff_source[i] <= 'Z') ||
+          (_buff_source[i] >= '0' && _buff_source[i] <= '9') ||
+          (_buff_source[i] == '-') ||
+          (_buff_source[i] == '+')
          )
         ){
           store_state = 0x01;
@@ -454,40 +454,40 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
             sjson_value_size += 8;
             buff_value_tmp = (char *) realloc(buff_value_tmp, sjson_value_size * sizeof(char));
           }
-          buff_value_tmp[cnt_tmp] = buff_source[i];
+          buff_value_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
       }
     }
-    else if (buff_source[i]=='\"'){
+    else if (_buff_source[i]=='\"'){
       if (!store_state){
         store_state = 1;
       }
       else if (!array_anomaly){
         store_state = 0;
-        if (buff_source[i + 1] == '\"'){
+        if (_buff_source[i + 1] == '\"'){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (1) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
       }
       if (cnt_switch && cnt_tmp){
-        if (buff_source[i + 1] == '\"'){
+        if (_buff_source[i + 1] == '\"'){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (2) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
-        buff_check = buff_source + i - cnt_tmp;
+        buff_check = _buff_source + i - cnt_tmp;
       }
     }
-    else if (buff_source[i]=='{' || buff_source[i] == '}'){
-      if (buff_source[i] == '}'){
+    else if (_buff_source[i]=='{' || _buff_source[i] == '}'){
+      if (_buff_source[i] == '}'){
         if (sjson_parrent_list[sjson_parrent_position] != SJSON_PARRENT_OBJECT){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (0)");
           goto sjson_get_list_err;
         }
         sjson_parrent_list[sjson_parrent_position] = SJSON_PARRENT_NULL;
         sjson_parrent_position--;
-        if (buff_source[i + 1] == '{' ||
-         buff_source[i + 1] == '['
+        if (_buff_source[i + 1] == '{' ||
+         _buff_source[i + 1] == '['
         ){
           sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for \",\" invalid possition (0)");
           goto sjson_get_list_err;
@@ -507,7 +507,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           if (json_types == SL_POINTER && !strcmp(buff_value_tmp, "null")){
             shilink_fill_custom_data(
              &sjson_data,
-             (void *) buff_key_tmp, 
+             (const void *) buff_key_tmp, 
              (uint16_t) strlen(buff_key_tmp),
              NULL,
              (uint16_t) 0,
@@ -516,13 +516,13 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           else {
             shilink_fill_custom_data(
              &sjson_data,
-             (void *) buff_key_tmp, 
+             (const void *) buff_key_tmp, 
              (uint16_t) strlen(buff_key_tmp),
-             (void *) buff_value_tmp,
+             (const void *) buff_value_tmp,
              (uint16_t) strlen(buff_value_tmp),
              json_types);
           }
-          shilink_append(sjson_list, sjson_data);
+          shilink_append(_sjson_list, sjson_data);
 
           if (sjson_key_size != 8){
             sjson_key_size = 8;
@@ -541,9 +541,9 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
       }
       else {
         if (i >= 2){
-          if (!((buff_source[i - 1] == ',' && buff_source[i - 2] == '}') ||
-           buff_source[i - 1] == ':' ||
-           buff_source[i - 1] == '[')
+          if (!((_buff_source[i - 1] == ',' && _buff_source[i - 2] == '}') ||
+           _buff_source[i - 1] == ':' ||
+           _buff_source[i - 1] == '[')
           ){
             sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (0.1)");
             goto sjson_get_list_err;
@@ -560,9 +560,9 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
 
   sjson_get_list_err:
     sjson_debug(__func__, SJSON_DEBUG_WARNING, "process stoped until:\n");
-    shilink_print(*sjson_list);
-    shilink_free(sjson_list);
-    *sjson_list = NULL;
+    shilink_print(*_sjson_list);
+    shilink_free(_sjson_list);
+    *_sjson_list = NULL;
     cnt_data = -1;
   sjson_get_list_end:
     free(buff_key_tmp);
@@ -572,11 +572,16 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
     return cnt_data;
 }
 
-uint16_t sjson_count_data_by_key(sjsonList _sjson_list, char *_key){
-  return shilink_count_data_by_key(_sjson_list, (void *)_key, (uint16_t) strlen(_key));
+uint16_t sjson_count_data_by_key(sjsonList _sjson_list, const char *_key){
+  return shilink_count_data_by_key(_sjson_list, (const void *) _key, (uint16_t) strlen(_key));
 }
 
-int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, int _pos, char* _value_result){
+int8_t sjson_get_value_by_key_and_position(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _pos,
+ char* _value_result
+){
   if (_sjson_list == NULL){
     sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
     return -1;
@@ -584,7 +589,7 @@ int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, in
   SHLinkCustomData sjson_data;
   if (shilink_search_data_by_position(
    _sjson_list,
-   (void *) _key,
+   (const void *) _key,
    (uint16_t) strlen(_key),
    _pos, &sjson_data) != 0){
     return -2;
@@ -594,7 +599,13 @@ int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, in
   return 0;
 }
 
-int8_t sjson_get_value_by_key_and_prevcond(sjsonList _sjson_list, char *_prev_key, char *_prev_value, char *_key, char* _value_result){
+int8_t sjson_get_value_by_key_and_prevcond(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ char* _value_result
+){
   if (_sjson_list == NULL){
     sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
     return -1;
@@ -602,12 +613,12 @@ int8_t sjson_get_value_by_key_and_prevcond(sjsonList _sjson_list, char *_prev_ke
   SHLinkCustomData sjson_data, sjson_cond;
   shilink_fill_custom_data(
    &sjson_cond, 
-   (void *) _prev_key,
+   (const void *) _prev_key,
    (uint16_t) strlen(_prev_key),
-   (void *) _prev_value,
+   (const void *) _prev_value,
    (uint16_t) strlen(_prev_value),
    SL_TEXT);
-  if (shilink_search_data_by_prev_cond(_sjson_list, (void *) _key, (uint16_t) strlen(_key), &sjson_cond, &sjson_data) != 0){
+  if (shilink_search_data_by_prev_cond(_sjson_list, (const void *) _key, (uint16_t) strlen(_key), &sjson_cond, &sjson_data) != 0){
     return -2;
     sjson_debug(__func__, SJSON_DEBUG_WARNING, "data not found\n");
   }
@@ -619,7 +630,12 @@ void sjson_free(sjsonList *_sjson_list){
   shilink_free(_sjson_list);
 }
 
-int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char *_key, char *_data){
+int8_t sjson_get_specific_data(
+ const char *_buff_source,
+ uint16_t size_of_source,
+ const char *_key,
+ char *_data
+){
   uint8_t cnt_switch = 0;
   uint16_t cnt_tmp = 0;
   uint16_t sjson_key_size = 8;
@@ -633,11 +649,11 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
   uint8_t obj_counter = 0;
   uint8_t arr_counter = 0;
 
-  while (buff_source[start_bytes] != '{' && buff_source[start_bytes] != '[' && buff_source[start_bytes] != 0x00){
+  while (_buff_source[start_bytes] != '{' && _buff_source[start_bytes] != '[' && _buff_source[start_bytes] != 0x00){
     start_bytes++;
   }
 
-  if (buff_source[start_bytes] == 0x00){
+  if (_buff_source[start_bytes] == 0x00){
     sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid json format\n");
     return -1;
   }
@@ -658,15 +674,15 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
   }
 
   for (i=start_bytes; i<size_of_source; i++){
-    if ((buff_source[i]!='{' && buff_source[i]!='}' && (buff_source[i]!='\"' || array_anomaly ==  1)) || i == (size_of_source-1)){
+    if ((_buff_source[i]!='{' && _buff_source[i]!='}' && (_buff_source[i]!='\"' || array_anomaly ==  1)) || i == (size_of_source-1)){
       if (cnt_switch == 0){
-        if (buff_source[i] == ':' && (buff_source[i+1] == '{' || buff_source[i+1] == '[')){
+        if (_buff_source[i] == ':' && (_buff_source[i+1] == '{' || _buff_source[i+1] == '[')){
           buff_key_tmp[cnt_tmp] = 0x00;
-          if (buff_source[i+1] == '{'){
+          if (_buff_source[i+1] == '{'){
             sprintf(buff_value_tmp, "obj_%i", obj_counter);
             obj_counter++;
           }
-          else if (buff_source[i+1] == '['){
+          else if (_buff_source[i+1] == '['){
             sprintf(buff_value_tmp, "arr_%i", arr_counter);
             arr_counter++;
           }
@@ -687,26 +703,26 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
           cnt_switch = 0;
           cnt_tmp = 0;
         }
-        else if(buff_source[i] == ':'){
+        else if(_buff_source[i] == ':'){
           buff_key_tmp[cnt_tmp] = 0x00;
           cnt_switch = 1;
           cnt_tmp = 0;
         }
-        else if (buff_source[i] != '[' && buff_source[i] != ',' && store_state == 1) {
+        else if (_buff_source[i] != '[' && _buff_source[i] != ',' && store_state == 1) {
           if ((sjson_key_size - 2) == cnt_tmp){
             sjson_key_size += 8;
             buff_key_tmp = (char *) realloc(buff_key_tmp, sjson_key_size * sizeof(char));
           }
-          buff_key_tmp[cnt_tmp] = buff_source[i];
+          buff_key_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
         else if (store_state == 0 &&
          (
-          (buff_source[i] >= 'a' && buff_source[i] <= 'z') ||
-          (buff_source[i] >= 'A' && buff_source[i] <= 'Z') ||
-          (buff_source[i] >= '0' && buff_source[i] <= '9') ||
-          (buff_source[i] == '-') ||
-          (buff_source[i] == '+')
+          (_buff_source[i] >= 'a' && _buff_source[i] <= 'z') ||
+          (_buff_source[i] >= 'A' && _buff_source[i] <= 'Z') ||
+          (_buff_source[i] >= '0' && _buff_source[i] <= '9') ||
+          (_buff_source[i] == '-') ||
+          (_buff_source[i] == '+')
          )
         ){
           store_state = 1;
@@ -714,23 +730,23 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
             sjson_key_size += 8;
             buff_key_tmp = (char *) realloc(buff_key_tmp, sjson_key_size * sizeof(char));
           }
-          buff_key_tmp[cnt_tmp] = buff_source[i];
+          buff_key_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
       }
       else {
-        if((buff_source[i] == ',' && array_anomaly == 0 && store_state == 0) ||
-         (buff_source[i] == ']' && array_anomaly == 0) ||
-         (buff_source[i] == '[' && store_state == 0) ||
-         (buff_source[i] == '\n' && buff_source[i-1] == '{' && i > 3) ||
+        if((_buff_source[i] == ',' && array_anomaly == 0 && store_state == 0) ||
+         (_buff_source[i] == ']' && array_anomaly == 0) ||
+         (_buff_source[i] == '[' && store_state == 0) ||
+         (_buff_source[i] == '\n' && _buff_source[i-1] == '{' && i > 3) ||
          i == (size_of_source-1)
         ){
           buff_value_tmp[cnt_tmp] = 0x00;
-          if (buff_source[i] == '{'){
+          if (_buff_source[i] == '{'){
             sprintf(buff_value_tmp, "obj_%i", obj_counter);
             obj_counter++;
           }
-          else if (buff_source[i] == '['){
+          else if (_buff_source[i] == '['){
             sprintf(buff_value_tmp, "arr_%i", arr_counter);
             arr_counter++;
           }
@@ -753,26 +769,26 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
           array_anomaly = 0;
         }
         else if (store_state == 1){
-          if (buff_source[i] == '['){
+          if (_buff_source[i] == '['){
             array_anomaly = 1;
           }
-          else if(buff_source[i] == ']'){
+          else if(_buff_source[i] == ']'){
             array_anomaly = 0;
           }
           if ((sjson_value_size - 2) == cnt_tmp){
             sjson_value_size += 8;
             buff_value_tmp = (char *) realloc(buff_value_tmp, sjson_value_size * sizeof(char));
           }
-          buff_value_tmp[cnt_tmp] = buff_source[i];
+          buff_value_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
         else if (store_state == 0 &&
          (
-          (buff_source[i] >= 'a' && buff_source[i] <= 'z') ||
-          (buff_source[i] >= 'A' && buff_source[i] <= 'Z') ||
-          (buff_source[i] >= '0' && buff_source[i] <= '9') ||
-          (buff_source[i] == '-') ||
-          (buff_source[i] == '+')
+          (_buff_source[i] >= 'a' && _buff_source[i] <= 'z') ||
+          (_buff_source[i] >= 'A' && _buff_source[i] <= 'Z') ||
+          (_buff_source[i] >= '0' && _buff_source[i] <= '9') ||
+          (_buff_source[i] == '-') ||
+          (_buff_source[i] == '+')
          )
         ){
           store_state = 1;
@@ -780,12 +796,12 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
             sjson_value_size += 8;
             buff_value_tmp = (char *) realloc(buff_value_tmp, sjson_value_size * sizeof(char));
           }
-          buff_value_tmp[cnt_tmp] = buff_source[i];
+          buff_value_tmp[cnt_tmp] = _buff_source[i];
           cnt_tmp++;
         }
       }
     }
-    else if (buff_source[i]=='\"'){
+    else if (_buff_source[i]=='\"'){
       if (store_state == 0){
         store_state = 1;
       }
@@ -793,8 +809,8 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
         store_state = 0;
       }
     }
-    else if (buff_source[i]=='{' || buff_source[i] == '}'){
-      if (buff_source[i] == '}'){
+    else if (_buff_source[i]=='{' || _buff_source[i] == '}'){
+      if (_buff_source[i] == '}'){
         if (cnt_tmp > 0){
           buff_value_tmp[cnt_tmp] = 0x00;
 
