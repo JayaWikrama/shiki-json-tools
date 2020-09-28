@@ -1,6 +1,6 @@
 /*
     lib info    : SHIKI_LIB_GROUP - JSON TOOLS
-    ver         : 2.00.20.07.28
+    ver         : 3.00.20.09.28
     author      : Jaya Wikrama, S.T.
     e-mail      : jayawikrama89@gmail.com
     Copyright (c) 2020 HANA,. Jaya Wikrama
@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include "shiki-json-tools.h"
 
-#define SJSON_VERSION "2.00.20.07.28"
+#define SJSON_VERSION "3.00.20.09.28"
 
 typedef enum {
   SJSON_DEBUG_INFO = 0x00,
@@ -624,6 +624,311 @@ int8_t sjson_get_value_by_key_and_prevcond(
   }
   strcpy(_value_result, sjson_data.sl_value);
   return 0;
+}
+
+char *sjson_get_value_by_key_as_string_n(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _pos
+){
+  if (_sjson_list == NULL){
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
+    return NULL;
+  }
+  SHLinkCustomData sjson_data;
+  if (shilink_search_data_by_position(
+   _sjson_list,
+   (const void *) _key,
+   (uint16_t) strlen(_key),
+   _pos, &sjson_data) != 0){
+    return NULL;
+    sjson_debug(__func__, SJSON_DEBUG_WARNING, "data not found\n");
+  }
+  return sjson_data.sl_value;
+}
+
+char *sjson_get_value_by_key_as_string(
+ sjsonList _sjson_list,
+ const char *_key
+){
+  return sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   0
+  );
+}
+
+int sjson_get_value_by_key_as_int_n(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _pos,
+ int _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoi(result);
+}
+
+int sjson_get_value_by_key_as_int(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoi(result);
+}
+
+long sjson_get_value_by_key_as_long_n(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _pos,
+ long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atol(result);
+}
+
+long sjson_get_value_by_key_as_long(
+ sjsonList _sjson_list,
+ const char *_key,
+ long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atol(result);
+}
+
+long long sjson_get_value_by_key_as_long_long_n(
+ sjsonList _sjson_list,
+ const char *_key,
+ int _pos,
+ long long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoll(result);
+}
+
+long long sjson_get_value_by_key_as_long_long(
+ sjsonList _sjson_list,
+ const char *_key,
+ long long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoll(result);
+}
+
+char *sjson_get_value_by_prev_cond_as_string_n(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ int _pos
+){
+  if (_sjson_list == NULL){
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
+    return NULL;
+  }
+  SHLinkCustomData sjson_data, sjson_cond;
+  shilink_fill_custom_data(
+   &sjson_cond, 
+   (const void *) _prev_key,
+   (uint16_t) strlen(_prev_key),
+   (const void *) _prev_value,
+   (uint16_t) strlen(_prev_value),
+   SL_TEXT);
+  if (shilink_search_data_by_prev_cond(_sjson_list, (const void *) _key, (uint16_t) strlen(_key), &sjson_cond, &sjson_data) != 0){
+    return NULL;
+    sjson_debug(__func__, SJSON_DEBUG_WARNING, "data not found\n");
+  }
+  return sjson_data.sl_value;
+}
+
+char *sjson_get_value_by_prev_cond_string(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key
+){
+  return sjson_get_value_by_key_as_string_n(
+   _sjson_list,
+   _key,
+   0
+  );
+}
+
+int sjson_get_value_by_prev_cond_int_n(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ int _pos,
+ int _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoi(result);
+}
+
+int sjson_get_value_by_prev_cond_as_int(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ int _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoi(result);
+}
+
+long sjson_get_value_by_prev_cond_as_long_n(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ int _pos,
+ long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atol(result);
+}
+
+long sjson_get_value_by_prev_cond_as_long(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atol(result);
+}
+
+long long sjson_get_value_by_prev_cond_as_long_long_n(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ int _pos,
+ long long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   _pos
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoll(result);
+}
+
+long long sjson_get_value_by_prev_cond_as_long_long(
+ sjsonList _sjson_list,
+ const char *_prev_key,
+ const char *_prev_value,
+ const char *_key,
+ long long _return_value_if_fail
+){
+  char *result = NULL;
+  result = sjson_get_value_by_prev_cond_as_string_n(
+   _sjson_list,
+   _prev_key,
+   _prev_value,
+   _key,
+   0
+  );
+  if(result == NULL){
+    return _return_value_if_fail;
+  }
+  return atoll(result);
 }
 
 void sjson_free(sjsonList *_sjson_list){
