@@ -18,6 +18,14 @@
 #define SJSON_VERSION "2.00.20.07.28"
 
 typedef enum {
+  SJSON_DEBUG_INFO = 0x00,
+  SJSON_DEBUG_VERSION = 0x01,
+  SJSON_DEBUG_WARNING = 0x02,
+  SJSON_DEBUG_ERROR = 0x03,
+  SJSON_DEBUG_CRITICAL = 0x04
+} sjson_debug_type;
+
+typedef enum {
   SJSON_PARRENT_NULL = 0x00,
   SJSON_PARRENT_OBJECT = 0x01,
   SJSON_PARRENT_ARRAY = 0x02
@@ -25,52 +33,51 @@ typedef enum {
 
 int8_t json_debug_mode_status = 0x00;
 
-static void sjson_debug(const char *function_name, char *debug_type, char *debug_msg, ...){
-  if (json_debug_mode_status || strcmp(debug_type, "INFO")){
+static void sjson_debug(const char *_function_name, sjson_debug_type _debug_type, char *_debug_msg, ...){
+  if (json_debug_mode_status || _debug_type != SJSON_DEBUG_INFO){
     struct tm *d_tm = NULL;
     struct timeval tm_debug;
     uint16_t msec = 0;
     gettimeofday(&tm_debug, NULL);
     d_tm = localtime(&tm_debug.tv_sec);
     msec = tm_debug.tv_usec/1000;
-
     #ifdef __linux__
-      if (strcmp(debug_type, "INFO")==0)
-        printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;32m %s\033[0m %s: ",
-         d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-         msec, debug_type, function_name
-        );
-      else if (strcmp(debug_type, "VERSION")==0)
-        printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;32m %s\033[0m %s: ",
-         d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-         msec, debug_type, function_name
-        );
-      else if (strcmp(debug_type, "WARNING")==0)
-        printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;33m %s\033[0m %s: ",
-         d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-         msec, debug_type, function_name
-        );
-      else if (strcmp(debug_type, "ERROR")==0)
-        printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;31m %s\033[0m %s: ",
-         d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-         msec, debug_type, function_name
-        );
-      else if (strcmp(debug_type, "CRITICAL")==0)
-        printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;31m %s\033[0m %s: ",
-         d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-         msec, debug_type, function_name
-        );
-    #else
-      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d %s: %s: ",
+    if (_debug_type == SJSON_DEBUG_INFO)
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;32m INFO\033[0m %s: ",
        d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
-       msec, debug_type, function_name
+       msec, _function_name
+      );
+    else if (_debug_type == SJSON_DEBUG_VERSION)
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;32m VERSION\033[0m %s: ",
+       d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
+       msec, _function_name
+      );
+    else if (_debug_type == SJSON_DEBUG_WARNING)
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;33m WARNING\033[0m %s: ",
+       d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
+       msec, _function_name
+      );
+    else if (_debug_type == SJSON_DEBUG_ERROR)
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;31m ERROR\033[0m %s: ",
+       d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
+       msec, _function_name
+      );
+    else if (_debug_type == SJSON_DEBUG_CRITICAL)
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d\033[0;34m SJSON\033[1;31m CRITICAL\033[0m %s: ",
+       d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
+       msec, _function_name
+      );
+    #else
+      printf("%02d-%02d-%04d %02d:%02d:%02d.%03d [%02x]: %s: ",
+       d_tm->tm_mday, d_tm->tm_mon+1, d_tm->tm_year+1900, d_tm->tm_hour, d_tm->tm_min, d_tm->tm_sec,
+       msec, _debug_type, _function_name
       );
     #endif
 
     va_list aptr;
-    va_start(aptr, debug_msg);
-    vfprintf(stdout, debug_msg, aptr);
-    va_end(aptr);
+    va_start(aptr, _debug_msg);
+	  vfprintf(stdout, _debug_msg, aptr);
+	  va_end(aptr);
   }
 }
 
@@ -158,7 +165,7 @@ long sjson_get_version(char *_version){
 }
 
 void sjson_view_version(){
-  sjson_debug(__func__, "VERSION", "%s\n", SJSON_VERSION);
+  sjson_debug(__func__, SJSON_DEBUG_VERSION, "%s\n", SJSON_VERSION);
 }
 
 void sjson_remove_whitespace_from_json_string(char *_buff, size_t _buff_length){
@@ -222,7 +229,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   }
 
   if (buff_source[start_bytes] == 0x00){
-    sjson_debug(__func__, "ERROR", "invalid json format\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid json format\n");
     return -1;
   }
 
@@ -232,13 +239,13 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   char *buff_key_tmp = NULL;
   buff_key_tmp = (char *) malloc(sjson_key_size * sizeof(char));
   if (buff_key_tmp == NULL){
-    sjson_debug(__func__, "ERROR", "failed to allocate buff_key_tmp memory\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "failed to allocate buff_key_tmp memory\n");
     return -2;
   }
   char *buff_value_tmp = NULL;
   buff_value_tmp = (char *) malloc(sjson_value_size * sizeof(char));
   if (buff_value_tmp == NULL){
-    sjson_debug(__func__, "ERROR", "failed to allocate buff_value_tmp memory\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "failed to allocate buff_value_tmp memory\n");
     free(buff_key_tmp);
     buff_key_tmp = NULL;
     return -2;
@@ -250,7 +257,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   for (i=start_bytes; i<size_of_source; i++){
     if (buff_source[i] == ']'){
       if (sjson_parrent_list[sjson_parrent_position] != SJSON_PARRENT_ARRAY){
-        sjson_debug(__func__, "ERROR", "invalid structure (1)");
+        sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (1)");
         goto sjson_get_list_err;
       }
       sjson_parrent_list[sjson_parrent_position] = SJSON_PARRENT_NULL;
@@ -258,7 +265,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
       if (buff_source[i + 1] == '{' ||
        buff_source[i + 1] == '['
       ){
-        sjson_debug(__func__, "ERROR", "find problem for \",\" invalid possition (1)");
+        sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for \",\" invalid possition (1)");
         goto sjson_get_list_err;
       }
     }
@@ -268,7 +275,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
          buff_source[i - 1] == ':' ||
          buff_source[i - 1] == '[')
         ){
-          sjson_debug(__func__, "ERROR", "invalid structure (1.1)");
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (1.1)");
           goto sjson_get_list_err;
         }
       }
@@ -332,7 +339,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
          sjson_parrent_list[sjson_parrent_position] == SJSON_PARRENT_OBJECT &&
          buff_source[i - 1] != ']'
         ){
-          sjson_debug(__func__, "ERROR", "key problem (0) after key: %s\n", buff_key_tmp);
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (0) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
       }
@@ -363,14 +370,14 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
                 json_types = SL_TEXT;
               }
               else {
-                sjson_debug(__func__, "ERROR", "find problem for (0)");
+                sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for (0)");
                 goto sjson_get_list_err;
               }
             }
             else {
               json_types = sjson_check_value_type(buff_value_tmp);
               if (json_types == SL_TEXT){
-                sjson_debug(__func__, "ERROR", "find problem for (1)");
+                sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for (1)");
                 goto sjson_get_list_err;
               }
             }
@@ -459,13 +466,13 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
       else if (!array_anomaly){
         store_state = 0;
         if (buff_source[i + 1] == '\"'){
-          sjson_debug(__func__, "ERROR", "key problem (1) after key: %s\n", buff_key_tmp);
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (1) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
       }
       if (cnt_switch && cnt_tmp){
         if (buff_source[i + 1] == '\"'){
-          sjson_debug(__func__, "ERROR", "key problem (2) after key: %s\n", buff_key_tmp);
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "key problem (2) after key: %s\n", buff_key_tmp);
           goto sjson_get_list_err;
         }
         buff_check = buff_source + i - cnt_tmp;
@@ -474,7 +481,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
     else if (buff_source[i]=='{' || buff_source[i] == '}'){
       if (buff_source[i] == '}'){
         if (sjson_parrent_list[sjson_parrent_position] != SJSON_PARRENT_OBJECT){
-          sjson_debug(__func__, "ERROR", "invalid structure (0)");
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (0)");
           goto sjson_get_list_err;
         }
         sjson_parrent_list[sjson_parrent_position] = SJSON_PARRENT_NULL;
@@ -482,7 +489,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
         if (buff_source[i + 1] == '{' ||
          buff_source[i + 1] == '['
         ){
-          sjson_debug(__func__, "ERROR", "find problem for \",\" invalid possition (0)");
+          sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for \",\" invalid possition (0)");
           goto sjson_get_list_err;
         }
         if (cnt_tmp){
@@ -493,7 +500,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
           else {
             json_types = sjson_check_value_type(buff_value_tmp);
             if (json_types == SL_TEXT){
-              sjson_debug(__func__, "ERROR", "find problem for (3)");
+              sjson_debug(__func__, SJSON_DEBUG_ERROR, "find problem for (3)");
               goto sjson_get_list_err;
             }
           }
@@ -538,7 +545,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
            buff_source[i - 1] == ':' ||
            buff_source[i - 1] == '[')
           ){
-            sjson_debug(__func__, "ERROR", "invalid structure (0.1)");
+            sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid structure (0.1)");
             goto sjson_get_list_err;
           }
         }
@@ -552,7 +559,7 @@ int16_t sjson_get_list(sjsonList *sjson_list, char *buff_source, uint16_t size_o
   goto sjson_get_list_end;
 
   sjson_get_list_err:
-    sjson_debug(__func__, "WARNING", "process stoped until:\n");
+    sjson_debug(__func__, SJSON_DEBUG_WARNING, "process stoped until:\n");
     shilink_print(*sjson_list);
     shilink_free(sjson_list);
     *sjson_list = NULL;
@@ -571,7 +578,7 @@ uint16_t sjson_count_data_by_key(sjsonList _sjson_list, char *_key){
 
 int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, int _pos, char* _value_result){
   if (_sjson_list == NULL){
-    sjson_debug(__func__, "ERROR", "_sjson_list is NULL\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
     return -1;
   }
   SHLinkCustomData sjson_data;
@@ -581,7 +588,7 @@ int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, in
    (uint16_t) strlen(_key),
    _pos, &sjson_data) != 0){
     return -2;
-    sjson_debug(__func__, "WARNING", "data not found\n");
+    sjson_debug(__func__, SJSON_DEBUG_WARNING, "data not found\n");
   }
   strcpy(_value_result, sjson_data.sl_value);
   return 0;
@@ -589,7 +596,7 @@ int8_t sjson_get_value_by_key_and_position(sjsonList _sjson_list, char *_key, in
 
 int8_t sjson_get_value_by_key_and_prevcond(sjsonList _sjson_list, char *_prev_key, char *_prev_value, char *_key, char* _value_result){
   if (_sjson_list == NULL){
-    sjson_debug(__func__, "ERROR", "_sjson_list is NULL\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "_sjson_list is NULL\n");
     return -1;
   }
   SHLinkCustomData sjson_data, sjson_cond;
@@ -602,7 +609,7 @@ int8_t sjson_get_value_by_key_and_prevcond(sjsonList _sjson_list, char *_prev_ke
    SL_TEXT);
   if (shilink_search_data_by_prev_cond(_sjson_list, (void *) _key, (uint16_t) strlen(_key), &sjson_cond, &sjson_data) != 0){
     return -2;
-    sjson_debug(__func__, "WARNING", "data not found\n");
+    sjson_debug(__func__, SJSON_DEBUG_WARNING, "data not found\n");
   }
   strcpy(_value_result, sjson_data.sl_value);
   return 0;
@@ -631,20 +638,20 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
   }
 
   if (buff_source[start_bytes] == 0x00){
-    sjson_debug(__func__, "ERROR", "invalid json format\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "invalid json format\n");
     return -1;
   }
 
   char *buff_key_tmp = NULL;
   buff_key_tmp = (char *) malloc(sjson_key_size * sizeof(char));
   if (buff_key_tmp == NULL){
-    sjson_debug(__func__, "ERROR", "failed to allocate buff_key_tmp memory\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "failed to allocate buff_key_tmp memory\n");
     return -2;
   }
   char *buff_value_tmp = NULL;
   buff_value_tmp = (char *) malloc(sjson_value_size * sizeof(char));
   if (buff_value_tmp == NULL){
-    sjson_debug(__func__, "ERROR", "failed to allocate buff_value_tmp memory\n");
+    sjson_debug(__func__, SJSON_DEBUG_ERROR, "failed to allocate buff_value_tmp memory\n");
     free(buff_key_tmp);
     buff_key_tmp = NULL;
     return -2;
@@ -814,7 +821,7 @@ int8_t sjson_get_specific_data(char *buff_source, uint16_t size_of_source, char 
       cnt_switch = 0;
     }
   }
-  sjson_debug(__func__, "WARNING", "not found match key\n");
+  sjson_debug(__func__, SJSON_DEBUG_WARNING, "not found match key\n");
   free(buff_key_tmp);
   free(buff_value_tmp);
   buff_key_tmp = NULL;
